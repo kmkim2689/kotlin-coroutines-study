@@ -33,9 +33,10 @@ val list1 = buildList {
 ```
 
 * flow 객체를 실행시키려면? => terminal operator가 필요
+  * 극히 일부의 연산자(launchIn 등)을 제외하면 거의 suspend function이다.
 
 1. collect
-* collect 함수가 왜 suspend function인가?
+* collect룰 비롯한 터미널 연산자들은 왜 suspend function인가?
   * flow 빌더 함수의 인자인 블록 내부에서 suspend function을 호출 가능하도록 하기 위함
     * 다른 flow 빌더에서 필요 시 발행할 수 있도록 하기 위함이다(03_usecase1_builders 참고)
 
