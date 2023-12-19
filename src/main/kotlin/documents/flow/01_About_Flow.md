@@ -116,4 +116,4 @@ private fun calculateFactorialOf(number: Int): Flow<BigInteger> = flow {
 * Suspend function
   * asynchronous operations -> return a single value
 * Flow
-  * emit()를 통해 여러 값들을 발행 가능
+* emit()를 통해 여러 값들을 발행 가능
