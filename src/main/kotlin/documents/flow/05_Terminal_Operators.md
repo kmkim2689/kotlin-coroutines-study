@@ -112,3 +112,157 @@ suspend fun main() {
 // 1
 // 끝... 더 이상 출력되지 않음
 ```
+
+* first(predicate: suspend(Int) -> Boolean)
+  * 조건을 통해 첫 번째로 발행될 아이템의 조건을 설정한다.
+```
+val item = flow1.first {
+    // bigger than one
+    it > 1
+}
+println(item) // 2
+```
+
+3. last() / lastOrNull()
+* 마지막으로 발행되기로 한 것만 말행함
+* first와 비슷한 원리
+
+4. single()
+* 1개의 값만이 발행되는 flow에 대해서만 사용 가능하다.
+* 하나만 발행된다고 확신할 수 있을 때만 활용
+  * 만약 flow가 2개 이상의 값을 발행한다면, IllegalArgumentException을 발생시킨다.
+
+* Wrong UseCase
+```
+suspend fun main() {
+
+    val flow1 = flow {
+        delay(100)
+
+        println("first value")
+        emit(1)
+        delay(100)
+
+        println("second value")
+        emit(2) // IllegalArgument
+    }
+
+    val items = flow1.single()
+    println(items)
+
+}
+```
+
+* Right
+```
+suspend fun main() {
+
+    val flow1 = flow {
+        delay(100)
+
+        println("first value")
+        emit(1)
+        delay(100)
+
+//        println("second value")
+//        emit(2)
+    }
+
+    val items = flow1.single()
+    println(items) // 1
+
+}
+```
+
+5. toSet(), toList()
+* 발행될 모든 데이터들을 순서대로 넣은 하나의 집합/리스트로 만들어준다.
+* 특징 : flow의 동작이 완료될 때까지 대기 -> 컬렉션 형태로 모든 발행된 아이템들을 한번에 내온다.
+  * 모든 것들이 발행될 때까지 대기해야함
+```
+suspend fun main() {
+
+    val flow1 = flow {
+        delay(100)
+
+        println("first value")
+        emit(1)
+        delay(100)
+
+        println("second value")
+        emit(2)
+
+        println("third value")
+        emit(2)
+    }
+
+    val setItems = flow1.toSet()
+    println(setItems) // [1, 2]
+
+    val listItems = flow1.toList()
+    println(listItems) // [1, 2, 2]
+
+}
+```
+
+> first, toList, toSet 등은 테스트할 때 요긴하게 사용될 수 있다.
+
+6. fold()
+* 매개변수
+  * 초기값 : 첫 발행된 값에 대해 사용할 accumulator 값
+  * 작업을 요하는 람다 함수 : 다음 발행에 활용할 accumulator 값을 산출(계산)
+    * 마지막 발행 시 계산된 결과가 최종 결과
+```
+suspend fun main() {
+
+    val flow1 = flow {
+        delay(100)
+
+        println("first value")
+        emit(1)
+        delay(100)
+
+        println("second value")
+        emit(2)
+    }
+
+    val items = flow1.fold(initial = 5) { accumulator, emittedItem ->
+        // accumulator
+        // reducer와 유사 : 발행된 데이터를 사용할 때마다 accumulator 값을 같이 활용할 수 있다.
+        // 중요 : 처음으로 발행된 값의 경우, accumulator의 값은 initial로 설정한 값이다.
+        // round1 - accumulator : 5, emittedItem : 1 => 6
+        // round2 - accumulator : 6, emittedItem : 2 => 8 => 최종 결과
+        accumulator + emittedItem // new accumulator value
+        // 굳이 더하기가 아니더라도 다양한 연산이 가능
+    }
+    println(items) // 8
+
+}
+```
+
+7. reduce() : fold와 유사하나, 초기값을 설정할 수 없다는 점에서 차이
+* 초기값이 없으므로, 두 번째 발행부터만 연산이 가능하다.(첫 번째로 발행된 값이 accumulator의 초기값이 되고, 이것을 두 번째 발행값에서부터 연산이 가능하다.)
+```
+suspend fun main() {
+
+    val flow1 = flow {
+        delay(100)
+
+        println("first value")
+        emit(1)
+        delay(100)
+
+        println("second value")
+        emit(2)
+    }
+
+    val items = flow1.reduce { accumulator, emittedItem ->
+        // accumulator
+        // 중요 : 처음으로 발행된 값의 경우, 계산이 불가능. 처음에 발행된 값의 경우 두번째 발행에서 accumulator의 값으로 활용됨
+        // round1 -> x
+        // round2 - accumulator : 1, emittedItem : 2 => 3 => 최종 결과
+        accumulator + emittedItem // new accumulator value
+    }
+    println(items) // 3
+
+}
+```
