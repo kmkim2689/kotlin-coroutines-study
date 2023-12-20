@@ -1,8 +1,9 @@
-package practice.flow
+package practice.flow.terminal_operators
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.single
 
 suspend fun main() {
 
@@ -13,11 +14,11 @@ suspend fun main() {
         emit(1)
         delay(100)
 
-        println("second value")
-        emit(2)
+//        println("second value")
+//        emit(2)
     }
 
-    val items = flow1.last()
+    val items = flow1.single()
     println(items)
 
 }

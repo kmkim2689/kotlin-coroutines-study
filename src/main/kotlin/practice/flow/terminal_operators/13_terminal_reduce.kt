@@ -1,4 +1,4 @@
-package practice.flow
+package practice.flow.terminal_operators
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow

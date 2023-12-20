@@ -1,4 +1,4 @@
-package practice.flow
+package practice.flow.terminal_operators
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
