@@ -113,3 +113,34 @@ suspend fun main() {
 * 파생되는 operator : dropWhile
   * takeWhile과는 달리, 조건에 부합하지 않아도 upstream을 취소하지 않음
 
+### 5. transform
+* map과 유사한 기능을 하지만, 엄연히 다름
+* FlowCollector 블록을 매개변수로 받는다. 따라서, suspend function을 수행할 수 있다.
+  * 즉, 발행되는 각 데이터에 대해 데이터 발행 형식으로 값을 내보낸다.
+
+```
+suspend fun main() {
+    flowOf(1, 2, 3, 4, 5)
+        .transform { 
+            emit(it * 10) // 10씩 곱하여 다시 발행하여 다운스트림으로...
+        }
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+} // 10, 20, 30, 40, 50
+```
+
+* map과의 가장 큰 차별점은 데이터 변형 이외의 추가적인 작업을 수행할 수 있을 뿐만 아니라,
+* **한 번의 발행에 대해 다시 여러 개의 데이터를 발행할 수도 있다**는 것이다.
+```
+suspend fun main() {
+    flowOf(1, 2, 3, 4, 5)
+        .transform {
+            emit(it)
+            emit(it * 10)
+        }
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+}
+```
