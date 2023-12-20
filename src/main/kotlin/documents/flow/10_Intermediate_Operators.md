@@ -98,3 +98,18 @@ suspend fun main() {
   * filter는 조건에 부합하지 않더라고 하더라도 끝까지 모두 순회
   * takeWhile은 조건에 부합하지 않는 순간 취소
 
+### 4. drop : one of the size limiting operators
+* 매개변수 count : 처음 발행되는 n개만큼 수집을 생략한다.
+```
+suspend fun main() {
+    flowOf(1, 2, 3, 4, 5)
+        .drop(count = 3) // 처음 발행되는 3개에 대한 수집을 드롭한다.
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+} // 4, 5
+```
+
+* 파생되는 operator : dropWhile
+  * takeWhile과는 달리, 조건에 부합하지 않아도 upstream을 취소하지 않음
+
