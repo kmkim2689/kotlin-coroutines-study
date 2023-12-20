@@ -67,4 +67,34 @@ suspend fun main() {
 
 ### 3. take : one of the size limiting operators
 * related to flow size
+* 처음 collect되는 값들 n개만 취한다.
+  * count 매개변수
+
+```
+suspend fun main() {
+    flowOf(1, 2, 3, 4, 5)
+        .take(count = 3)
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+
+} // 1, 2, 3(처음 3개만)
+```
+
+* 파생 operators
+  * takeWhile : 조건에 부합할 때(predicate)까지만 collect한다.
+  ```
+  suspend fun main() {
+      flowOf(1, 2, 3, 4, 5)
+          .takeWhile { it < 3 } // 처음으로 3 이상이 나올 때 수집 종료
+          .collect { collectedValue ->
+              println(collectedValue)
+          }
+  }
+  ```
+  
+* filter vs takeWhile
+  * **upstream flow를 cancel**하느냐의 여부의 차이
+  * filter는 조건에 부합하지 않더라고 하더라도 끝까지 모두 순회
+  * takeWhile은 조건에 부합하지 않는 순간 취소
 
