@@ -165,3 +165,38 @@ class FlowUseCaseViewModel(
   }
 }
 ```
+
+### 6. withIndex
+* IndexedValue<T>(index: Int, value: T) 데이터 클래스 형태로 수집한다.
+* 데이터와 그 데이터가 발행되는 인덱스를 함께 얻고자 할 때 활용한다.
+```
+suspend fun main() {
+    flowOf(1, 2, 3, 4, 5)
+        .withIndex()
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+}
+```
+
+* 결과
+```
+IndexedValue(index=0, value=1)
+IndexedValue(index=1, value=2)
+IndexedValue(index=2, value=3)
+IndexedValue(index=3, value=4)
+IndexedValue(index=4, value=5)
+```
+
+7. distinctUntilChanged()
+* 같은 값이 subsequent emission되는 것을 불허하도록 한다.
+* 직전에 수집된 값과 현재 수집된 값이 같을 경우 현재 수집될 값은 수집되지 않는다.
+```
+suspend fun main() {
+    flowOf(1, 1, 2, 3, 4, 5)
+        .distinctUntilChanged()
+        .collect { collectedValue ->
+            println(collectedValue)
+        }
+} // 1, 2, 3, 4, 5(두 번째 1은 수집되지 않는다.)
+```
