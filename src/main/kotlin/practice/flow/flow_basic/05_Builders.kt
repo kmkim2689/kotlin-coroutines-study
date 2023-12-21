@@ -1,4 +1,4 @@
-package practice.flow
+package practice.flow.flow_basic
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
