@@ -2,6 +2,8 @@
 
 > Coroutine과 Flow에서의 취소에서 핵심은 취소 시 관련 코드들은 협력적이어야 한다는 것이다.
 > flow를 collect하는 코루틴이 취소된다면, 그 이후 그 코루틴에서의 작업들은 모두 취소되어야 한다는 것이다.
+> flow를 수집하는 코루틴에서 비용이 많이 드는 flow 빌더 상의 코드가 계속 실행되지 않도록 적절히 cancel하는 작업이 필요하다.
+> 예를 들어, flow에서 값을 발행하기 위해 에서 네트워크 통신이 이뤄져야 하는 경우, 그것을 수집하는 코루틴이 취소되면 해당 네트워크 작업이 이뤄지지 않도록 해야 효율적일 것이다.
 
 ## Flow의 cancel 여부를 확인하는 방법 : onCompletion 연산자 활용(lifecycle operator)
 ```
@@ -234,3 +236,102 @@ private fun intFlow() = flow {
   start
   Flow Got Cancelled // 함수의 동작이 다 끝나지 않고 취소됨 -> 취소와 관련하여 cooperative
   ```
+  
+## 다른 flow 빌더 함수를 활용하였을 때의 취소
+* flowOf()로 위의 코드와 같은 역할을 하도록 작성
+```
+suspend fun main() {
+    val scope = CoroutineScope(EmptyCoroutineContext)
+
+    scope.launch {
+        flowOf(1, 2, 3)
+            .onCompletion { throwable ->
+                // to check if the flow got cancelled
+                if (throwable is CancellationException) {
+                    println("Flow Got Cancelled")
+                }
+            }
+            .collect {
+                println("collect $it")
+            }
+    }.join() // main function should wait until the coroutine completes
+}
+```
+
+* 결과
+  * 2 수집 시 취소되지 않음
+```
+collect 1
+collect 2
+collect 3
+```
+
+* 이유
+  * flowOf 빌더는 내부적으로 flow를 수집하는 코루틴이 여전히 활성화 되어있는지 체크하지 않기 때문이다.
+  * 따라서, flow { } 빌더가 아닌 빌더 함수를 활용할 때는 수동적으로 현재 코루틴이 활성화되어있는지 체크하는 과정이 필요하다.
+
+* onEach 연산자를 사용하여, 각 수집 때마다 코루틴이 돌아가고 있는지 체크하여 돌아가고 있을 때만 flow가 지속되도록 한다.
+
+```
+suspend fun main() {
+    val scope = CoroutineScope(EmptyCoroutineContext)
+
+    scope.launch {
+        flowOf(1, 2, 3)
+            .onCompletion { throwable ->
+                // to check if the flow got cancelled
+                if (throwable is CancellationException) {
+                    println("Flow Got Cancelled")
+                }
+            }
+            // 수집 때마다 수동으로 검사하여 코루틴 취소 시 수동으로 취소
+            .onEach {
+                println("receive $it in onEach")
+
+                // if (!currentCoroutineContext().job.isActive) {
+                //     throw CancellationException()
+                // }
+                ensureActive() // shortcut of the code above
+            }
+            .collect {
+                println("collect $it")
+                
+                if (it == 2) cancel()
+            }
+    }.join() // main function should wait until the coroutine completes
+}
+```
+
+```
+receive 1 in onEach
+collect 1
+receive 2 in onEach
+collect 2
+receive 3 in onEach
+Flow Got Cancelled // collect 3이 실행되지 않음 -> 취소되어 수집이 이뤄지지 않음.
+```
+
+* 위 취소 관련 코드에 대한 또 다른 shorthand가 존재한다. : cancellable() operator
+```
+suspend fun main() {
+    val scope = CoroutineScope(EmptyCoroutineContext)
+
+    scope.launch {
+        flowOf(1, 2, 3)
+            .onCompletion { throwable ->
+                // to check if the flow got cancelled
+                if (throwable is CancellationException) {
+                    println("Flow Got Cancelled")
+                }
+            }
+            // 수집 때마다 수동으로 검사하여 코루틴 취소 시 수동으로 취소
+            // 각 발행 시마다 코루틴의 활성화 여부를 검사
+            .cancellable()
+            .collect {
+                println("collect $it")
+
+                if (it == 2) cancel()
+            }
+    }.join() // main function should wait until the coroutine completes
+}
+```
